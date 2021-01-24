@@ -37,6 +37,13 @@ pub enum Token {
     Comma,          // ,
 
     //keywords
+    Break,
+    Continue,
+    Else,
+    If,
+    Return,
+    While,
+    Function,
 
     //error special token
     LexicalError(String)
@@ -344,7 +351,18 @@ impl<'a> TokenStream<'a> {
         };
 
         let word = self.read_while(is_letter);
-        Token::Ident(word)
+
+        //matching with keywords
+        match &word[..] {
+            "break" => Token::Break,
+            "continue" => Token::Continue,
+            "else" => Token::Else,
+            "if" => Token::If,
+            "return" => Token::Return,
+            "while" => Token::While,
+            "function" => Token::Function,
+            _ => Token::Ident(word)
+        }
     }
 
     fn skip_comment(&mut self) {
