@@ -7,6 +7,11 @@ pub enum Token {
     Ident(String),
     Int(String),
     Float(String),
+    Str(String),
+
+    //boolean
+    True,
+    False,
 
     //operators
     Add,            //+
@@ -51,9 +56,9 @@ pub enum Token {
 
 #[derive(Debug)]
 pub struct TokenInfo {
-    token: Token,
-    line: u32,
-    column: u32
+    pub token: Token,
+    pub line: u32,
+    pub column: u32
 }
 
 impl TokenInfo {
@@ -76,7 +81,7 @@ pub struct TokenStream<'a> {
 
 impl<'a> TokenStream<'a> {
 
-    pub fn new(input: &String) -> TokenStream {
+    pub fn new(input: &str) -> TokenStream {
         TokenStream {
             char_stream: input.chars().peekable(),
             column: 0,
@@ -297,6 +302,10 @@ impl<'a> TokenStream<'a> {
                     Some(self.read_word())
                 },
 
+                '"' | '\'' => {
+                    Some(self.read_string())
+                },
+
                 _ => {
                     self.error = true;
                     Some(Token::LexicalError(
@@ -361,12 +370,22 @@ impl<'a> TokenStream<'a> {
             "return" => Token::Return,
             "while" => Token::While,
             "function" => Token::Function,
+            "true" => Token::True,
+            "false" => Token::False,
             _ => Token::Ident(word)
         }
     }
 
     fn skip_comment(&mut self) {
         self.read_while(|x| x != '\n');
+    }
+
+    //just a simple implementation. To fix later....
+    fn read_string(&mut self) -> Token {
+        let q = self.next().unwrap();
+        let value = self.read_while(|x| x != q);
+        self.next();
+        Token::Str(value)
     }
 
 }

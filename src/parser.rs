@@ -1,7 +1,13 @@
-use crate::lexer
-    ::{Token, TokenInfo, TokenStream};
+use crate::lexer;
+use crate::lexer::TokenStream;
 
-#[derive(Debug)]
-pub enum Node {
-    
+use std::iter::Peekable;
+/*
+pub struct AstBuilder {
+    token_stream: Peekable<>
 }
+
+impl AstBuilder {
+    pub fn new(token_stream)
+}
+*/

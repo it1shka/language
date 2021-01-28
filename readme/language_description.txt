@@ -1,0 +1,8 @@
+#formal language description
+#in pythonic bnf format
+
+program:
+    expression*
+
+expression:
+    
