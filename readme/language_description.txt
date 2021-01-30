@@ -2,7 +2,55 @@
 #in pythonic bnf format
 
 program:
-    expression*
+    statement*
 
-expression:
+statement:
+    '{' statement* '}'
+    'break' ';'
+    'continue' ';'
+    'return' expression ';'
+    'while' '(' expression ')' statement
+    'if' '(' expression ')' statement ('else' statement)?
+    'function' ident '(' (ident,)* ')' statement
     
+expression:
+    expr1 '=' expr1
+
+expr1:
+    expr2 '||' expr2
+
+expr2:
+    expr3 '&&' expr3
+
+expr3:
+    expr4 '==' expr4
+    expr4 '!=' expr4
+
+expr4:
+    expr5 '<' expr5
+    expr5 '>' expr5
+    expr5 '<=' expr5
+    expr5 '>=' expr5
+
+expr5:
+    expr6 '-' expr6
+    expr6 '+' expr6
+
+expr6:
+    expr7 '*' expr7
+    expr7 '/' expr7
+    expr7 '%' expr7
+
+expr7:
+    primary_expression
+
+primary_expression:
+    '+' primary_expression
+    '-' primary_expression
+    '!' primary_expression
+    '(' expression ')'
+    ident
+    ident '(' (expression,)* ')' #function call
+    int
+    float
+    str

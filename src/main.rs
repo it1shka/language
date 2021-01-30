@@ -1,22 +1,35 @@
 mod lexer;
-mod parser;
-
-use lexer::TokenStream;
-use lexer::TokenInfo;
-use lexer::Token;
+use lexer::stream::Stream;
+use lexer::token::Token;
 
 use std::io::stdin;
 
 fn main() {
     let mut user_input = String::new();
-
     loop {
-        stdin().read_line(&mut user_input);
-        let token_stream = TokenStream::new(&user_input);
-        for TokenInfo{token, ..} in token_stream {
-            println!("{:#?}", token)
+        stdin().read_line(&mut user_input).expect("err");
+        let mut stream = Stream::new(&user_input);
+        
+        loop {
+            let nxt = stream.next().unwrap();
+            let (line, col) = stream.get_pos();
+            if let Ok(Token::EOF) = nxt {
+                break;
+            }
+            if let Err(err) = nxt {
+                println!("{}", err);
+                break;
+            }
+            if let Ok(some) = nxt {
+                println!("{:#?}", some);
+                println!("{}:{}", line, col);
+            }
+            
+            println!("----------------------------");
         }
-        println!("------------------------------------");
+
+        println!("\n\n\n\n");
+
         user_input.clear();
     }
 }
