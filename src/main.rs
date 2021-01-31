@@ -2,6 +2,8 @@ mod lexer;
 use lexer::stream::Stream;
 use lexer::token::Token;
 
+mod parser;
+
 use std::io::stdin;
 
 fn main() {
@@ -21,7 +23,7 @@ fn main() {
                 break;
             }
             if let Ok(some) = nxt {
-                println!("{:#?}", some);
+                println!("{}", some);
                 println!("{}:{}", line, col);
             }
             
