@@ -32,12 +32,15 @@ impl<'a> Builder<'a> {
         Ok(t_type == self.peek()?)
     }
 
-    fn eat(&mut self, t_type: Token) -> Result<Token, String> {
+
+    //target position...
+    fn eat(&mut self, t_type: Token) -> Result<(), String> {
         if t_type != self.peek()? {
             Err(format!("Expected token of type '{}'", t_type))
         }
         else {
-            self.next()
+            self.next()?;
+            Ok(())
         }
     }
 
@@ -49,8 +52,12 @@ impl<'a> Builder<'a> {
     }
 
     fn parse_program(&mut self) -> Result<Vec<Statement>, String> {
-        //replace and continue
-        Err(String::from("You Are Gay"))
+        let statements: Vec<Statement> = Vec::new();
+        while self.peek()?.is_eof()
+    }
+
+    fn parse_statement(&mut self) -> Result<Statement, String> {
+
     }
 
 }

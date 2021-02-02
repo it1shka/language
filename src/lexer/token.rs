@@ -89,6 +89,13 @@ impl Token {
         self.is_num() || self.is_id() || self.is_str()
     }
 
+    pub fn is_eof(&self) -> bool {
+        match self {
+            Token::EOF => true,
+            _ => false
+        }
+    }
+
 }
 
 //
