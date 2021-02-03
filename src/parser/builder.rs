@@ -22,6 +22,10 @@ impl<'a> Builder<'a> {
         self.stream.next().unwrap()
     }
 
+    fn pos(&self) -> (usize, usize) {
+        self.stream.get_pos()
+    }
+
     //to fix later... it actually should return a ref like
     // &Result<Token, String>
     fn peek(&mut self) -> Result<Token, String> {
@@ -53,7 +57,9 @@ impl<'a> Builder<'a> {
 
     fn parse_program(&mut self) -> Result<Vec<Statement>, String> {
         let statements: Vec<Statement> = Vec::new();
-        while self.peek()?.is_eof()
+        while self.peek()?.is_eof() {
+
+        }
     }
 
     fn parse_statement(&mut self) -> Result<Statement, String> {
