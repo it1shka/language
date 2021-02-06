@@ -1,242 +1,169 @@
-use super::token::Token;
-
 use std::iter::Peekable;
 use std::str::Chars;
 use std::iter::Iterator;
 
+use super::token::Token;
+
 pub struct Stream<'a> {
-    buffer: Peekable<Chars<'a>>,
-    line: usize,
-    column: usize
+    chars: Peekable<Chars<'a>>,
+    current_char: Option<char>
+}
+
+//added a small macro, for better flexibility
+macro_rules! tok {
+    ($token:expr) => {
+        Ok($token)
+    };
 }
 
 impl<'a> Stream<'a> {
-
-    pub fn new(input: &str) -> Stream {
+    pub fn new(source: &str) -> Stream {
         Stream {
-            buffer: input.chars().peekable(),
-            line: 0,
-            column: 0
+            chars: source.chars().peekable(),
+            current_char: None
         }
-    }
-
-    pub fn get_pos(&self) -> (usize, usize) {
-        (self.line, self.column)
     }
 
     fn next(&mut self) -> Option<char> {
-        let ch = self.buffer.next();
-        if let Some('\n') = ch {
-            self.line += 1;
-            self.column = 0;
-        }
-        else {
-            self.column += 1;
-        }
-        ch
+        self.current_char = self.chars.next();
+        self.current_char
     }
 
     fn peek(&mut self) -> Option<&char> {
-        self.buffer.peek()
+        self.chars.peek()
     }
 
-    fn read_while(&mut self, predicate: &impl Fn(char) -> bool) -> String {
-        let mut val = String::new();
-        while let Some(current) = self.peek() {
-            if predicate(*current) {
-                val.push(*current);
+    fn get_cur(&self) -> char {
+        self.current_char.unwrap()
+    }
+
+    fn read_while(&mut self, 
+        predicate: impl Fn(char) -> bool) -> String {
+        let mut value = String::new();
+        while let Some(c) = self.peek() {
+            if predicate(*c) {
+                value.push(*c);
                 self.next();
             }
             else {
-                break;
+                break
             }
         }
-        val
+        value
     }
 
-    fn eat_whitespace(&mut self) {
-        self.read_while(&|x| match x {
-            ' '| '\n' | '\t' | '\r' => true,
-            _ => false
-        }); 
-    }
-
-    fn eat_comment(&mut self) {
-        self.read_while(&|x| x != '\n');
-    }
-
+    //core function
     fn read_token(&mut self) -> Result<Token, String> {
-        
         self.eat_whitespace();
 
-        let current = self.peek();
-        match current {
-            None => Ok(Token::EOF),
-            Some(c) => match c {
-
-                //operators
-
-                '+' => {
-                    self.next();
-                    Ok(Token::Add)
-                },
-                '-' => {
-                    self.next();
-                    Ok(Token::Sub)
-                },
-                '*' => {
-                    self.next();
-                    Ok(Token::Mul)
-                },
+        match self.next() {
+            None => tok!(Token::EOF),
+            Some(ch) => match ch {
+                '+' => tok!(Token::Add),
+                '-' => tok!(Token::Sub),
+                '*' => tok!(Token::Mul),
                 '/' => {
-                    self.next();
                     if let Some('/') = self.peek() {
                         self.eat_comment();
                         self.read_token()
                     }
                     else {
-                        Ok(Token::Div)
+                        tok!(Token::Div)
                     }
                 },
-                '%' => {
-                    self.next();
-                    Ok(Token::Mod)
-                },
+                '%' => tok!(Token::Mod),
                 '=' => {
-                    self.next();
                     if let Some('=') = self.peek() {
                         self.next();
-                        Ok(Token::Equal)
-                    }else {
-                        Ok(Token::Assign)
+                        tok!(Token::Equal)
+                    }
+                    else {
+                        tok!(Token::Assign)
                     }
                 },
                 '!' => {
-                    self.next();
                     if let Some('=') = self.peek() {
                         self.next();
-                        Ok(Token::NotEqual)
+                        tok!(Token::NotEqual)
                     }
                     else {
-                        Ok(Token::Not)    
+                        tok!(Token::Not)
                     }
                 },
                 '>' => {
-                    self.next();
                     if let Some('=') = self.peek() {
                         self.next();
-                        Ok(Token::GreaterOrEqual)
-                    } else {
-                        Ok(Token::Greater)
+                        tok!(Token::GreaterOrEqual)
+                    }
+                    else {
+                        tok!(Token::Greater)
                     }
                 },
                 '<' => {
-                    self.next();
                     if let Some('=') = self.peek() {
                         self.next();
-                        Ok(Token::LessOrEqual)
-                    } else {
-                        Ok(Token::Less)
+                        tok!(Token::LessOrEqual)
+                    }
+                    else {
+                        tok!(Token::Less)
                     }
                 },
                 '&' => {
-                    self.next();
-                    if let Some('&') = self.peek() {
-                        self.next();
-                        Ok(Token::And)
-                    } else {
-                        Err(String::from("'&' operator hasn't been implemented yet"))
+                    if let Some('&') = self.next() {
+                        tok!(Token::And)
+                    }
+                    else {
+                        Err(String::from("'&' isn't implemented yet!"))
                     }
                 },
                 '|' => {
-                    self.next();
-                    if let Some('|') = self.peek() {
-                        self.next();
-                        Ok(Token::Or)
-                    } else {
-                        Err(String::from("'|' operator hasn't been implemented yet"))
+                    if let Some('|') = self.next() {
+                        tok!(Token::Or)
+                    }
+                    else {
+                        Err(String::from("'|' isn't implemented yet!"))
                     }
                 },
-
-                //punctuation
-                
-                '(' => {
-                    self.next();
-                    Ok(Token::LeftBracket)
-                },
-                ')' => {
-                    self.next();
-                    Ok(Token::RightBracket)
-                },
-                '{' => {
-                    self.next();
-                    Ok(Token::LeftBrace)
-                },
-                '}' => {
-                    self.next();
-                    Ok(Token::RightBrace)
-                },
-                ';' => {
-                    self.next();
-                    Ok(Token::Semicolon)
-                },
-                ',' => {
-                    self.next();
-                    Ok(Token::Comma)
-                },
-
-                //number
-
-                '0' ..= '9' => 
-                    Ok(self.read_number()),
-                
-                //word
+                '(' => tok!(Token::LeftBracket),
+                ')' => tok!(Token::RightBracket),
+                '{' => tok!(Token::LeftBrace),
+                '}' => tok!(Token::RightBrace),
+                ';' => tok!(Token::Semicolon),
+                ',' => tok!(Token::Comma),
 
                 'a' ..= 'z' | 'A' ..= 'Z' | '_' =>
-                    Ok(self.read_word()),
-
-                //string literal
-
+                    tok!(self.read_word()),
+                
                 '"' | '\'' => 
-                    Ok(self.read_string()),
+                    tok!(self.read_string_literal()),
 
-                //other
+                '0' ..= '9' => self.read_number(),
 
-                _ => Err(String::from(format!(
-                    "Unexpected character while lexing: '{}'",
-                    *c
-                )))
+                _ => {
+                    Err(format!("Unexpected character: '{}'", 
+                    self.get_cur()))
+                }
 
             }
         }
     }
 
-    fn read_number(&mut self) -> Token {
-        let is_digit = |x| match x {
-            '0' ..= '9' => true,
+    //precore functions
+    fn eat_whitespace(&mut self) {
+        self.read_while(|x| match x {
+            '\n' | '\t' | ' ' | '\r' => true,
             _ => false
-        };
-        let mut number = self.read_while(&is_digit);
-        if let Some('.') = self.peek() {
-            number.push(self.next().unwrap());
-            number += &self.read_while(&is_digit);
-            let val = number.parse::<f64>().unwrap();
-            Token::Float(val)
-        } else {
-            let val = number.parse::<i32>().unwrap();
-            Token::Int(val)
-        }
+        });
+    }
+
+    fn eat_comment(&mut self) {
+        self.read_while(|x| x != '\n');
     }
 
     fn read_word(&mut self) -> Token {
-        let is_letter = |x| match x {
-            '_' | 'a' ..= 'z' | 'A' ..= 'Z' | '0' ..= '9' => true,
-            _ => false
-        };
-
-        let word = self.read_while(&is_letter);
-
-        //matching with keywords
+        let mut word = String::new();
+        word.push(self.get_cur());
+        word.push_str(&self.read_while(Stream::is_letter));
         match &word[..] {
             "break" => Token::Break,
             "continue" => Token::Continue,
@@ -251,13 +178,51 @@ impl<'a> Stream<'a> {
         }
     }
 
-    //just a simple impl. To fix later....
-    fn read_string(&mut self) -> Token {
-        let q = self.next().unwrap();
-        let value = self.read_while(&|x| x != q);
+    //just a simple implementation. later fix that... Maybe not
+    fn read_string_literal(&mut self) -> Token {
+        let q = self.get_cur();
+        let value = self.read_while(|x| x != q);
         self.next();
         Token::Str(value)
     }
+
+    fn read_number(&mut self) -> Result<Token, String> {
+        let mut number = String::new();
+        number.push(self.get_cur());
+        number.push_str(& self.read_while(Stream::is_digit));
+        if let Some('.') = self.peek() {
+            self.next();
+            number.push(self.get_cur());
+            number.push_str(& self.read_while(Stream::is_digit));
+            let val = number.parse::<f64>();
+            match val {
+                Ok(v) => Ok(Token::Float(v)),
+                Err(_) => Err(String::from("Can't parse floating number!"))
+            }
+        }
+        else {
+            let val = number.parse::<i32>();
+            match val {
+                Ok(v) => Ok(Token::Int(v)),
+                Err(_) => Err(String::from("Can't parse integer number!"))
+            }
+        }
+    }
+
+    fn is_letter(x: char) -> bool {
+        match x {
+            '_' | 'a' ..= 'z' | 'A' ..= 'Z' | '0' ..= '9' => true,
+            _ => false
+        }
+    }
+
+    fn is_digit(x: char) -> bool {
+        match x {
+            '0' ..= '9' => true,
+            _ => false
+        }
+    }
+
 }
 
 impl Iterator for Stream<'_> {

@@ -12,6 +12,7 @@ statement:
     'while' '(' expression ')' statement
     'if' '(' expression ')' statement ('else' statement)?
     'function' ident '(' (ident,)* ')' statement
+    expression
     
 expression:
     expr1 '=' expr1
