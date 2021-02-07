@@ -174,6 +174,7 @@ impl<'a> Stream<'a> {
             "function" => Token::Function,
             "true" => Token::True,
             "false" => Token::False,
+            "null" => Token::Null,
             _ => Token::Ident(word)
         }
     }

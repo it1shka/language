@@ -53,4 +53,7 @@ pub enum PrimaryExpression {
     Float(f64),
     Int(i32),
     Str(String),
+    Boolean(bool),
+    FunctionCall(String, Vec<Expression>),
+    Null
 }

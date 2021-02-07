@@ -5,6 +5,27 @@ use super::ast::*;
 
 use std::iter::Peekable;
 
+fn tr_op(token: Token) -> BinaryOperator {
+    match token {
+        Token::Add => BinaryOperator::Add,
+        Token::Sub => BinaryOperator::Sub,
+        Token::Mul => BinaryOperator::Mul,
+        Token::Div => BinaryOperator::Div,
+        Token::Mod => BinaryOperator::Mod,
+        Token::Equal => BinaryOperator::Equal,
+        Token::NotEqual => BinaryOperator::NotEqual,
+        Token::Greater => BinaryOperator::Greater,
+        Token::Less => BinaryOperator::Less,
+        Token::GreaterOrEqual => BinaryOperator::GreaterOrEqual,
+        Token::LessOrEqual => BinaryOperator::LessOrEqual,
+        Token::And => BinaryOperator::Add,
+        Token::Or => BinaryOperator::Or,
+        Token::Not => BinaryOperator::Not,
+        Token::Assign => BinaryOperator::Assign,
+        _ => panic!("Can't translate Token to BinaryOperator")
+    }
+}
+
 pub struct Builder<'a> {
     stream: Peekable<Stream<'a>>
 }
@@ -39,7 +60,7 @@ impl<'a> Builder<'a> {
     }
 
     fn drop(&mut self, amount: u8) -> Result<(), String> {
-        for i in 0..amount {
+        for _i in 0..amount {
             self.next()?;
         }
         Ok(())
@@ -184,14 +205,219 @@ impl<'a> Builder<'a> {
 
     fn parse_expression_stmt(&mut self) -> Result<Statement, String> {
         let expression = self.parse_expression()?;
+        self.eat(Token::Semicolon)?;
         Ok(Statement::ExpressionStmt(expression))
     }
 
-    //here we go: expressions!!!
-    //продолжу завтра ибо еще оч много что писать
+    //expressions
     fn parse_expression(&mut self) -> Result<Expression, String> {
-        //просто втыкнул чтобы тестить
-        Ok(Expression::Primary(PrimaryExpression::Int(1)))
+        self.expr1()
+    }
+
+    fn expr1(&mut self) -> Result<Expression, String> {
+        let mut left = self.expr2()?;
+        while let Token::Assign = self.peek()? {
+            let op = self.next()?;
+            let right = self.expr2()?;
+            left = Expression::
+                BinaryOperation(
+                    tr_op(op),
+                    Box::new(left),
+                    Box::new(right)
+                );
+        }
+        Ok(left)
+    }
+
+    fn expr2(&mut self) -> Result<Expression, String> {
+        let mut left = self.expr3()?;
+        while let Token::Or = self.peek()? {
+            let op = self.next()?;
+            let right = self.expr3()?;
+            left = Expression::
+                BinaryOperation(
+                    tr_op(op),
+                    Box::new(left),
+                    Box::new(right)
+                );
+        }
+        Ok(left)
+    }
+
+    fn expr3(&mut self) -> Result<Expression, String> {
+        let mut left = self.expr4()?;
+        while let Token::And = self.peek()? {
+            let op = self.next()?;
+            let right = self.expr4()?;
+            left = Expression::
+                BinaryOperation(
+                    tr_op(op),
+                    Box::new(left),
+                    Box::new(right)
+                );
+        }
+        Ok(left)
+    }
+
+    fn expr4(&mut self) -> Result<Expression, String> {
+        let mut left = self.expr5()?;
+        while match self.peek()? {
+            Token::Equal | Token::NotEqual => true,
+            _ => false
+        }{
+            let op = self.next()?;
+            let right = self.expr5()?;
+            left = Expression::
+                BinaryOperation(
+                    tr_op(op),
+                    Box::new(left),
+                    Box::new(right)
+                );
+        }
+        Ok(left)
+    }
+
+    fn expr5(&mut self) -> Result<Expression, String> {
+        let mut left = self.expr6()?;
+        while match self.peek()? {
+            Token::Less 
+            | Token::LessOrEqual
+            | Token::Greater
+            | Token::GreaterOrEqual => true,
+            _ => false
+        }{
+            let op = self.next()?;
+            let right = self.expr6()?;
+            left = Expression::
+                BinaryOperation(
+                    tr_op(op),
+                    Box::new(left),
+                    Box::new(right)
+                );
+        }
+        Ok(left)
+    }
+
+    fn expr6(&mut self) -> Result<Expression, String> {
+        let mut left = self.expr7()?;
+        while match self.peek()? {
+            Token::Add | Token::Sub => true,
+            _ => false
+        }{
+            let op = self.next()?;
+            let right = self.expr7()?;
+            left = Expression::
+                BinaryOperation(
+                    tr_op(op),
+                    Box::new(left),
+                    Box::new(right)
+                );
+        }
+        Ok(left)
+    }
+
+    fn expr7(&mut self) -> Result<Expression, String> {
+        let mut left = self.expr8()?;
+        while match self.peek()? {
+            Token::Mul 
+            | Token::Div
+            | Token::Mod => true,
+            _ => false
+        }{
+            let op = self.next()?;
+            let right = self.expr8()?;
+            left = Expression::
+                BinaryOperation(
+                    tr_op(op),
+                    Box::new(left),
+                    Box::new(right)
+                );
+        }
+        Ok(left)
+    }
+
+    fn expr8(&mut self) -> Result<Expression, String> {
+        Ok(Expression::Primary(
+            self.parse_primary()?
+        ))
+    }
+
+    //primary expression
+    
+    fn parse_primary(&mut self) -> Result<PrimaryExpression, String> {
+        let next = self.peek()?;
+        match next {
+            Token::Add => self.parse_prim_plus(),
+            Token::Sub => self.parse_prim_minus(),
+            Token::Not => self.parse_prim_not(),
+            Token::LeftBracket => self.parse_prim_in_brackets(),
+            Token::Ident(_) => self.parse_from_ident(),
+            Token::Int(x) => {self.next()?; Ok(PrimaryExpression::Int(x))},
+            Token::Float(x) => {self.next()?; Ok(PrimaryExpression::Float(x))},
+            Token::Str(x) => {self.next()?; Ok(PrimaryExpression::Str(x))},
+            Token::True => {self.next()?; Ok(PrimaryExpression::Boolean(true))},
+            Token::False => {self.next()?; Ok(PrimaryExpression::Boolean(false))},
+            Token::Null => {self.next()?; Ok(PrimaryExpression::Null)},
+            _ => Err(format!("Unexpected token '{:?}' while parsing prim expr!", next))
+        }
+    }
+
+    fn parse_prim_plus(&mut self) -> Result<PrimaryExpression, String> {
+        self.eat(Token::Add)?;
+        let prim = self.parse_primary()?;
+        Ok(PrimaryExpression::UnaryPlus(Box::new(prim)))
+    }
+
+    fn parse_prim_minus(&mut self) -> Result<PrimaryExpression, String> {
+        self.eat(Token::Sub)?;
+        let prim = self.parse_primary()?;
+        Ok(PrimaryExpression::UnaryMinus(Box::new(prim)))
+    }
+
+    fn parse_prim_not(&mut self) -> Result<PrimaryExpression, String> {
+        self.eat(Token::Not)?;
+        let prim = self.parse_primary()?;
+        Ok(PrimaryExpression::UnaryMinus(Box::new(prim)))
+    }
+
+    fn parse_prim_in_brackets(&mut self) -> Result<PrimaryExpression, String> {
+        self.eat(Token::LeftBracket)?;
+        let expr = self.parse_expression()?;
+        self.eat(Token::RightBracket)?;
+        let bracketed = PrimaryExpression::InBrackets(Box::new(expr));
+        Ok(bracketed)
+    }
+
+    fn parse_from_ident(&mut self) -> Result<PrimaryExpression, String> {
+        if let Token::Ident(name) = self.next()? {
+            match self.peek()? {
+                Token::LeftBracket => {
+                    self.eat(Token::LeftBracket)?;
+                    let args = self.parse_call_args()?;
+                    self.eat(Token::RightBracket)?;
+                    Ok(PrimaryExpression::FunctionCall(name, args))
+                },
+                _ => {
+                    Ok(PrimaryExpression::Ident(name))
+                }
+            }
+        }
+        else {
+            Err(String::from("Exprected ident while parsing ident"))
+        }
+    }
+
+    fn parse_call_args(&mut self) -> Result<Vec<Expression>, String> {
+        let mut args: Vec<Expression> = Vec::new();
+        while self.peek()? != Token::RightBracket {
+            let expr = self.parse_expression()?;
+            args.push(expr);
+            match self.peek()? {
+                Token::Comma => {self.next()?; },
+                _ => break
+            }
+        }
+        Ok(args)
     }
 
 }

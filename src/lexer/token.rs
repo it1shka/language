@@ -9,6 +9,7 @@ pub enum Token {
 
     True,
     False,
+    Null,
 
     //keywords
     Break,
