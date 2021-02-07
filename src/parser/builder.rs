@@ -173,7 +173,9 @@ impl<'a> Builder<'a> {
         let ident = self.next()?;
         match ident {
             Token::Ident(name) => {
+                self.eat(Token::LeftBracket)?;
                 let args = self.parse_decl_args()?;
+                self.eat(Token::RightBracket)?;
                 let body = self.parse_statement()?;
                 Ok(Statement::Function(name, args, Box::new(body)))
             },
@@ -183,23 +185,17 @@ impl<'a> Builder<'a> {
         }
     }
 
-    //еле работает
-    fn parse_decl_args(&mut self) -> Result<Vec<String>, String> {
-        let mut args: Vec<String> = Vec::new();
-        self.eat(Token::LeftBracket)?;
-        loop {
-            if let Token::Ident(name) = self.peek()? {
-                args.push(name);
-                self.next()?;
-                if let Token::Comma = self.peek()? {
-                    self.next()?;
-                }
-                else {
-                    break;
-                }
+    //просто копия
+    fn parse_decl_args(&mut self) -> Result<Vec<Expression>, String> {
+        let mut args: Vec<Expression> = Vec::new();
+        while self.peek()? != Token::RightBracket {
+            let expr = self.parse_expression()?;
+            args.push(expr);
+            match self.peek()? {
+                Token::Comma => {self.next()?; },
+                _ => break
             }
         }
-        self.eat(Token::RightBracket)?;
         Ok(args)
     }
 
@@ -377,7 +373,7 @@ impl<'a> Builder<'a> {
     fn parse_prim_not(&mut self) -> Result<PrimaryExpression, String> {
         self.eat(Token::Not)?;
         let prim = self.parse_primary()?;
-        Ok(PrimaryExpression::UnaryMinus(Box::new(prim)))
+        Ok(PrimaryExpression::UnaryNot(Box::new(prim)))
     }
 
     fn parse_prim_in_brackets(&mut self) -> Result<PrimaryExpression, String> {

@@ -1,0 +1,3 @@
+> reimplement function call (make call operator '()')
+> probably add arrays (array literal '[...]' and get operator '[]')
+> make a runtime

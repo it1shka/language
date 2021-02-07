@@ -10,7 +10,7 @@ pub enum Statement {
     Return(Expression),
     While(Expression, Box<Statement>),
     If(Expression, Box<Statement>, Option<Box<Statement>>),
-    Function(String, Vec<String>, Box<Statement>),
+    Function(String, Vec<Expression>, Box<Statement>),
     ExpressionStmt(Expression)
 }
 
