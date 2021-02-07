@@ -18,7 +18,7 @@ fn tr_op(token: Token) -> BinaryOperator {
         Token::Less => BinaryOperator::Less,
         Token::GreaterOrEqual => BinaryOperator::GreaterOrEqual,
         Token::LessOrEqual => BinaryOperator::LessOrEqual,
-        Token::And => BinaryOperator::Add,
+        Token::And => BinaryOperator::And,
         Token::Or => BinaryOperator::Or,
         Token::Not => BinaryOperator::Not,
         Token::Assign => BinaryOperator::Assign,
@@ -57,13 +57,6 @@ impl<'a> Builder<'a> {
             self.next()?;
             Ok(())
         }
-    }
-
-    fn drop(&mut self, amount: u8) -> Result<(), String> {
-        for _i in 0..amount {
-            self.next()?;
-        }
-        Ok(())
     }
 
     //parsing functions
@@ -174,10 +167,10 @@ impl<'a> Builder<'a> {
         match ident {
             Token::Ident(name) => {
                 self.eat(Token::LeftBracket)?;
-                let args = self.parse_decl_args()?;
+                let args = self.parse_args()?;
                 self.eat(Token::RightBracket)?;
                 let body = self.parse_statement()?;
-                Ok(Statement::Function(name, args, Box::new(body)))
+                Ok(Statement::FunctionDecl(name, args, Box::new(body)))
             },
             _ => Err(format!(
                 "Expected function name, not '{:?}'", ident
@@ -185,8 +178,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    //просто копия
-    fn parse_decl_args(&mut self) -> Result<Vec<Expression>, String> {
+    fn parse_args(&mut self) -> Result<Vec<Expression>, String> {
         let mut args: Vec<Expression> = Vec::new();
         while self.peek()? != Token::RightBracket {
             let expr = self.parse_expression()?;
@@ -334,86 +326,57 @@ impl<'a> Builder<'a> {
 
     fn expr8(&mut self) -> Result<Expression, String> {
         Ok(Expression::Primary(
-            self.parse_primary()?
+            self.parse_primary_highlevel()?
         ))
     }
 
     //primary expression
     
+    fn parse_primary_highlevel(&mut self) -> Result<PrimaryExpression, String> {
+        self.parse_post_ops()
+    }
+
+    //parses call operator '()' and later get operator '[]'
+    fn parse_post_ops(&mut self) -> Result<PrimaryExpression, String> {
+        let mut prim = self.parse_primary()?;
+        while let Token::LeftBracket = self.peek()? {
+            self.eat(Token::LeftBracket)?;
+            let args = self.parse_args()?;
+            self.eat(Token::RightBracket)?;
+            prim = PrimaryExpression::Call(
+                Box::new(prim),
+                args
+            )
+        }
+        Ok(prim)
+    }
+
     fn parse_primary(&mut self) -> Result<PrimaryExpression, String> {
-        let next = self.peek()?;
-        match next {
-            Token::Add => self.parse_prim_plus(),
-            Token::Sub => self.parse_prim_minus(),
-            Token::Not => self.parse_prim_not(),
-            Token::LeftBracket => self.parse_prim_in_brackets(),
-            Token::Ident(_) => self.parse_from_ident(),
-            Token::Int(x) => {self.next()?; Ok(PrimaryExpression::Int(x))},
-            Token::Float(x) => {self.next()?; Ok(PrimaryExpression::Float(x))},
-            Token::Str(x) => {self.next()?; Ok(PrimaryExpression::Str(x))},
-            Token::True => {self.next()?; Ok(PrimaryExpression::Boolean(true))},
-            Token::False => {self.next()?; Ok(PrimaryExpression::Boolean(false))},
-            Token::Null => {self.next()?; Ok(PrimaryExpression::Null)},
-            _ => Err(format!("Unexpected token '{:?}' while parsing prim expr!", next))
+        let tok = self.next()?;
+        match tok {
+            Token::Ident(x) => Ok(PrimaryExpression::Ident(x)),
+            Token::Int(x) => Ok(PrimaryExpression::Int(x)),
+            Token::Float(x) => Ok(PrimaryExpression::Float(x)),
+            Token::Str(x) => Ok(PrimaryExpression::Str(x)),
+            Token::True => Ok(PrimaryExpression::Boolean(true)),
+            Token::False => Ok(PrimaryExpression::Boolean(false)),
+            Token::Null => Ok(PrimaryExpression::Null),
+            Token::LeftBracket => {
+                let expr = self.parse_expression()?;
+                self.eat(Token::RightBracket)?;
+                Ok(PrimaryExpression::InBrackets(Box::new(expr)))
+            },
+            Token::Add => Ok(PrimaryExpression::UnaryPlus(
+                Box::new(self.parse_primary()?)
+            )),
+            Token::Sub => Ok(PrimaryExpression::UnaryMinus(
+                Box::new(self.parse_primary()?)
+            )),
+            Token::Not => Ok(PrimaryExpression::UnaryNot(
+                Box::new(self.parse_primary()?)
+            )),
+            _ => Err(format!("Unexpected token '{:?}' while parsing primary!", tok))
         }
-    }
-
-    fn parse_prim_plus(&mut self) -> Result<PrimaryExpression, String> {
-        self.eat(Token::Add)?;
-        let prim = self.parse_primary()?;
-        Ok(PrimaryExpression::UnaryPlus(Box::new(prim)))
-    }
-
-    fn parse_prim_minus(&mut self) -> Result<PrimaryExpression, String> {
-        self.eat(Token::Sub)?;
-        let prim = self.parse_primary()?;
-        Ok(PrimaryExpression::UnaryMinus(Box::new(prim)))
-    }
-
-    fn parse_prim_not(&mut self) -> Result<PrimaryExpression, String> {
-        self.eat(Token::Not)?;
-        let prim = self.parse_primary()?;
-        Ok(PrimaryExpression::UnaryNot(Box::new(prim)))
-    }
-
-    fn parse_prim_in_brackets(&mut self) -> Result<PrimaryExpression, String> {
-        self.eat(Token::LeftBracket)?;
-        let expr = self.parse_expression()?;
-        self.eat(Token::RightBracket)?;
-        let bracketed = PrimaryExpression::InBrackets(Box::new(expr));
-        Ok(bracketed)
-    }
-
-    fn parse_from_ident(&mut self) -> Result<PrimaryExpression, String> {
-        if let Token::Ident(name) = self.next()? {
-            match self.peek()? {
-                Token::LeftBracket => {
-                    self.eat(Token::LeftBracket)?;
-                    let args = self.parse_call_args()?;
-                    self.eat(Token::RightBracket)?;
-                    Ok(PrimaryExpression::FunctionCall(name, args))
-                },
-                _ => {
-                    Ok(PrimaryExpression::Ident(name))
-                }
-            }
-        }
-        else {
-            Err(String::from("Exprected ident while parsing ident"))
-        }
-    }
-
-    fn parse_call_args(&mut self) -> Result<Vec<Expression>, String> {
-        let mut args: Vec<Expression> = Vec::new();
-        while self.peek()? != Token::RightBracket {
-            let expr = self.parse_expression()?;
-            args.push(expr);
-            match self.peek()? {
-                Token::Comma => {self.next()?; },
-                _ => break
-            }
-        }
-        Ok(args)
     }
 
 }

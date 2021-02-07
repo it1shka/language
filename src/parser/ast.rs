@@ -10,7 +10,7 @@ pub enum Statement {
     Return(Expression),
     While(Expression, Box<Statement>),
     If(Expression, Box<Statement>, Option<Box<Statement>>),
-    Function(String, Vec<Expression>, Box<Statement>),
+    FunctionDecl(String, Vec<Expression>, Box<Statement>),
     ExpressionStmt(Expression)
 }
 
@@ -54,6 +54,6 @@ pub enum PrimaryExpression {
     Int(i32),
     Str(String),
     Boolean(bool),
-    FunctionCall(String, Vec<Expression>),
+    Call(Box<PrimaryExpression>, Vec<Expression>),
     Null
 }
