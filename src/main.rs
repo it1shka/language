@@ -5,6 +5,9 @@ use lexer::token::Token;
 mod parser;
 use parser::builder::Builder;
 
+mod runner;
+
+
 use std::io::stdin;
 
 fn main() {

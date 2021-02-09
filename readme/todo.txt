@@ -7,3 +7,7 @@
 > implement get operator '[index]'
 > implement arrays
 > implement lambdas 'lambda(params) {}'
+
+09.02.21
+Just some thoughts about how to store variables...
+Rc<Hashset<&str, Object>>
