@@ -1,8 +1,8 @@
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Program(pub Vec<Statement>);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     List(Vec<Statement>),
     Break,
@@ -14,13 +14,13 @@ pub enum Statement {
     ExpressionStmt(Expression)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Primary(PrimaryExpression),
     BinaryOperation(BinaryOperator, Box<Expression>, Box<Expression>)
 }
 
-#[derive(Debug, PartialEq)] 
+#[derive(Debug, PartialEq, Clone)] 
 pub enum BinaryOperator {
     //opearators
     Add,            //+
@@ -43,7 +43,7 @@ pub enum BinaryOperator {
     Assign,         // =
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum PrimaryExpression {
     UnaryPlus(Box<PrimaryExpression>),
     UnaryMinus(Box<PrimaryExpression>),
