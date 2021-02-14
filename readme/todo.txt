@@ -1,20 +1,7 @@
-07.02.21
-> reimplement function call (make call operator '()')
-> probably add arrays (array literal '[...]' and get operator '[]')
-> make a runtime
+> управление памятью -- стек из хеш-таблиц (областей видимости)
 
-08.02.21
-> implement get operator '[index]'
-> implement arrays
-> implement lambdas 'lambda(params) {}'
+> continue, break, return -- колбэки, которые возвращаются из visit_statement, 
+передавая управление внешней функции
 
-09.02.21
-Just some thoughts about how to store variables...
-Rc<Hashset<&str, Object>>
-
-13.02.21
-need to implement variable storage like 
-MemStack
-
-14.02.21
-implement break, continue, return as callbacks
+> сделать специальный синтаксис echo <Expression>; для того, чтобы не мучаться
+со встроенными функциями

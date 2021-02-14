@@ -175,6 +175,8 @@ impl<'a> Stream<'a> {
             "true" => Token::True,
             "false" => Token::False,
             "null" => Token::Null,
+            //вывод
+            "echo" => Token::Echo,
             _ => Token::Ident(word)
         }
     }

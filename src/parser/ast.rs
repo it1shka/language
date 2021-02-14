@@ -8,6 +8,7 @@ pub enum Statement {
     Break,
     Continue,
     Return(Expression),
+    Echo(Expression),
     While(Expression, Box<Statement>),
     If(Expression, Box<Statement>, Option<Box<Statement>>),
     FunctionDecl(String, Vec<Expression>, Box<Statement>),

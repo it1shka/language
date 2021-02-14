@@ -19,6 +19,9 @@ pub enum Token {
     If,
     Else,
     Function,
+
+    //вывод
+    Echo,
     
     //opearators
     Add,            //+

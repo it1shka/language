@@ -81,6 +81,8 @@ impl<'a> Builder<'a> {
             Token::Break => self.parse_break(),
             Token::Continue => self.parse_continue(),
             Token::Return => self.parse_return(),
+            //вывод
+            Token::Echo => self.parse_echo(),
             Token::While => self.parse_while(),
             Token::If => self.parse_if(),
             Token::Function => self.parse_function(),
@@ -123,6 +125,14 @@ impl<'a> Builder<'a> {
         let expression = self.parse_expression()?;
         self.eat(Token::Semicolon)?;
         Ok(Statement::Return(expression))
+    }
+
+    //вывод
+    fn parse_echo(&mut self) -> Result<Statement, String> {
+        self.eat(Token::Echo)?;
+        let expression = self.parse_expression()?;
+        self.eat(Token::Semicolon)?;
+        Ok(Statement::Echo(expression))
     }
 
     fn parse_while(&mut self) -> Result<Statement, String> {
