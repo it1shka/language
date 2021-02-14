@@ -1,5 +1,4 @@
 use crate::parser::ast::*;
-use crate::parser::builder::Builder;
 
 use super::object::Object;
 use super::storage::MemStack;
@@ -53,9 +52,9 @@ impl Engine {
             Statement::Break => Ok(Some(Callback::Break)),
             Statement::Continue => Ok(Some(Callback::Continue)),
             Statement::Return(expression) => 
-                Ok(Some(Callback::Return(self.visit_expression(expression)))),
+                Ok(Some(Callback::Return(self.visit_expression(expression)?))),
             Statement::Echo(expression) => {
-                echo(self.visit_expression(expression));
+                echo(self.visit_expression(expression)?);
                 Ok(None)
             },
             Statement::While(expression, stmt) => 
@@ -63,17 +62,17 @@ impl Engine {
             Statement::If(expression, stmt1, stmt2) =>
                 self.visit_if(expression, stmt1, stmt2),
             Statement::ExpressionStmt(expression) => {
-                self.visit_expression(expression);
+                self.visit_expression(expression)?;
                 Ok(None)
             },
             Statement::FunctionDecl(name, args, stmt) => {
-                self.visit_func_decl(name, args, stmt);
+                self.visit_func_decl(name, args, stmt)?;
                 Ok(None)
             }
         }
     }
 
-    fn visit_expression(&mut self, expression: &Expression) -> Object {
+    fn visit_expression(&mut self, expression: &Expression) -> Result<Object, String> {
         match expression {
             Expression::Primary(prim) => self.visit_prim(prim),
             Expression::BinaryOperation(op, expr1, expr2) =>
@@ -81,34 +80,49 @@ impl Engine {
         }
     }
 
-    fn visit_prim(&mut self, primary: &PrimaryExpression) -> Object {
+    fn visit_prim(&mut self, primary: &PrimaryExpression) -> Result<Object, String> {
         match primary {
             PrimaryExpression::UnaryPlus(pr) => 
-                self.visit_prim(pr).unary_plus(),
+                Ok(self.visit_prim(pr)?.unary_plus()),
             PrimaryExpression::UnaryMinus(pr) =>
-                self.visit_prim(pr).unary_minus(),
+                Ok(self.visit_prim(pr)?.unary_minus()),
             PrimaryExpression::UnaryNot(pr) =>
-                self.visit_prim(pr).not(),
+                Ok(self.visit_prim(pr)?.not()),
             PrimaryExpression::InBrackets(expr) =>
                 self.visit_expression(expr),
             PrimaryExpression::Ident(name) => 
-                self.memory.get_var(name.clone()),
+                Ok(self.memory.get_var(name.clone())),
             PrimaryExpression::Float(x) =>
-                Object::Float(*x),
+                Ok(Object::Float(*x)),
             PrimaryExpression::Int(x) =>
-                Object::Int(*x),
+                Ok(Object::Int(*x)),
             PrimaryExpression::Str(x) => 
-                Object::Str(x.clone()),
+                Ok(Object::Str(x.clone())),
             PrimaryExpression::Boolean(x) =>
-                Object::Boolean(*x),
+                Ok(Object::Boolean(*x)),
+            PrimaryExpression::Null =>
+                Ok(Object::Null),
             PrimaryExpression::Call(call_object, args) =>
-                
+                self.visit_func_call(call_object, args)
         }
     }
 
     fn visit_bin_op(&mut self, operator: &BinaryOperator, 
-    left: &Box<Expression>, right: &Box<Expression>) -> Object {
-        
+    left: &Box<Expression>, right: &Box<Expression>) -> Result<Object, String> {
+        if let BinaryOperator::Assign = operator {
+            match &**left {
+                Expression::Primary(PrimaryExpression::Ident(name)) 
+                => {
+                    let val = self.visit_expression(right)?;
+                    self.memory.set_var(name.clone(), val.clone());
+                    Ok(val)
+                },
+                _ => {Err("Can't assign to a constant".to_string()) }
+            }
+        }
+        else {
+            Ok(Object::Null)
+        }
     }
 
     fn visit_while(&mut self, expression: &Expression, statement: &Box<Statement>) ->
@@ -129,7 +143,7 @@ impl Engine {
 
     fn visit_func_call(&mut self, call_object: &Box<PrimaryExpression>, 
     args: &Vec<Expression>) -> Result<Object, String> {
-
+        Ok(Object::Int(1))
     }
 
 }

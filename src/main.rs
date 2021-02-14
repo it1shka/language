@@ -1,12 +1,9 @@
 mod lexer;
-use lexer::stream::Stream;
-use lexer::token::Token;
-
 mod parser;
-use parser::builder::Builder;
-
 mod runner;
 
+mod launcher;
+use launcher::launcher::launch;
 
 use std::io::stdin;
 
@@ -15,10 +12,12 @@ fn main() {
     loop {
         stdin().read_line(&mut input).expect("Oooops! Sorry!");
         
-        let stream = Stream::new(&input);
+        /*let stream = Stream::new(&input);
         let mut builder = Builder::new(stream);
         let ast = builder.build();
-        println!("{:?}", ast);
+        println!("{:?}", ast);*/
+
+        launch(&input);
 
         input.clear();
     }

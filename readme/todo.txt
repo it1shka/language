@@ -10,3 +10,7 @@
 на колбэки break, continue, return и возвращать их внешней функции
 
 > visit_expression должно возвращать Result<...> -- доделать
+
+> сделать fmt::Display для object
+
+> юху! оно чуть работает!
