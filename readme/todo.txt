@@ -11,3 +11,10 @@
 09.02.21
 Just some thoughts about how to store variables...
 Rc<Hashset<&str, Object>>
+
+13.02.21
+need to implement variable storage like 
+MemStack
+
+14.02.21
+implement break, continue, return as callbacks
