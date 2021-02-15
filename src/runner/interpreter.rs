@@ -220,11 +220,29 @@ impl Engine {
                         arg_name = name;
                         arg_init_val = Object::Null;
                     }
-                    else let Expression::Primary(PrimaryExpression::Assign(
-                        
-                    ))
+                    else {
+                        return Err("Default params with expression aren't supported yet!"
+                        .to_string())
+                    }
+
+                    let call_arg = call_args.get(i);
+                    match call_arg {
+                        None => (),
+                        Some(expression) => {
+                            arg_init_val = self.visit_expression(expression)?;
+                        }
+                    }
+
+                    self.memory.set_var(arg_name, arg_init_val);
                 }
-                Ok(Object::Null)
+
+                match self.visit_statement(&body)? {
+                    Some(callback) => match callback {
+                        Callback::Return(object) => Ok(object),
+                        Callback::Break | Callback::Continue => Ok(Object::Null)
+                    },
+                    None => Ok(Object::Null)
+                }
             },
             _ => Err(format!("Can't call '{:?}' object!", call_object))
         }
