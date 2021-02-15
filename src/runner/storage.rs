@@ -13,8 +13,8 @@ impl Mem {
         }
     }
 
-    fn get(&self, name: String) -> Option<Object> {
-        match self.vars.get(&name) {
+    fn get(&self, name: &str) -> Option<Object> {
+        match self.vars.get(name) {
             None => None,
             Some(object) => Some(object.clone())
         }
@@ -22,6 +22,10 @@ impl Mem {
 
     fn set(&mut self, name: String, value: Object) {
         self.vars.insert(name, value);
+    }
+
+    fn has(&self, name: &str) -> bool {
+        self.vars.contains_key(name)
     }
 
 }
@@ -60,11 +64,21 @@ impl MemStack {
 
     pub fn get_var(&mut self, name: String) -> Object {
         for mem in self.stack.iter().rev() {
-            if let Some(object) = mem.get(name.clone()) {
+            if let Some(object) = mem.get(&name) {
                 return object;
             }
         }
         Object::Null
+    }
+
+    pub fn set_or_rewrite_var(&mut self, name: String, value: Object) {
+        for mem in self.stack.iter_mut().rev() {
+            if mem.has(&name) {
+                mem.set(name.clone(), value.clone());
+                return;
+            }
+        }
+        self.set_var(name, value);
     }
 
 }

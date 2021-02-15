@@ -109,41 +109,125 @@ impl Engine {
 
     fn visit_bin_op(&mut self, operator: &BinaryOperator, 
     left: &Box<Expression>, right: &Box<Expression>) -> Result<Object, String> {
-        if let BinaryOperator::Assign = operator {
-            match &**left {
-                Expression::Primary(PrimaryExpression::Ident(name)) 
-                => {
-                    let val = self.visit_expression(right)?;
-                    self.memory.set_var(name.clone(), val.clone());
-                    Ok(val)
-                },
-                _ => {Err("Can't assign to a constant".to_string()) }
-            }
-        }
-        else {
-            Ok(Object::Null)
+        match operator {
+            BinaryOperator::Assign => {
+                match &**left {
+                    Expression::Primary(PrimaryExpression::Ident(name)) 
+                    => {
+                        let val = self.visit_expression(right)?;
+                        self.memory.set_or_rewrite_var(name.clone(), val.clone());
+                        Ok(val)
+                    },
+                    _ => {Err("Can't assign to a constant".to_string()) }
+                }
+            },
+
+            BinaryOperator::Add => 
+            Ok(self.visit_expression(left)?.add(&self.visit_expression(right)?)),
+            BinaryOperator::Sub => 
+            Ok(self.visit_expression(left)?.add(&self.visit_expression(right)?)),
+            BinaryOperator::Mul => 
+            Ok(self.visit_expression(left)?.mul(&self.visit_expression(right)?)),
+            BinaryOperator::Div => 
+            Ok(self.visit_expression(left)?.div(&self.visit_expression(right)?)),
+            BinaryOperator::Mod => 
+            Ok(self.visit_expression(left)?.mod_(&self.visit_expression(right)?)),
+            
+
+            BinaryOperator::Equal => 
+            Ok(self.visit_expression(left)?.equal(&self.visit_expression(right)?)),
+            BinaryOperator::NotEqual => 
+            Ok(self.visit_expression(left)?.not_equal(&self.visit_expression(right)?)),
+            BinaryOperator::Greater => 
+            Ok(self.visit_expression(left)?.greater(&self.visit_expression(right)?)),
+            BinaryOperator::Less => 
+            Ok(self.visit_expression(left)?.less(&self.visit_expression(right)?)),
+            BinaryOperator::GreaterOrEqual => 
+            Ok(self.visit_expression(left)?.greater_or_equal(&self.visit_expression(right)?)),
+            BinaryOperator::LessOrEqual => 
+            Ok(self.visit_expression(left)?.less_or_equal(&self.visit_expression(right)?)),
+            
+            BinaryOperator::And => 
+            Ok(self.visit_expression(left)?.and(&self.visit_expression(right)?)),
+            BinaryOperator::Or => 
+            Ok(self.visit_expression(left)?.or(&self.visit_expression(right)?)),
+            
+            BinaryOperator::Not => 
+            Err("Unexpected 'not' operator!".to_string())
+            
         }
     }
 
     fn visit_while(&mut self, expression: &Expression, statement: &Box<Statement>) ->
     Result<Option<Callback>, String> {
-        Ok(Some(Callback::Break))
+        self.memory.new_scope();
+        while let Object::Boolean(true) = self.visit_expression(expression)? {
+            if let Some(callback) = self.visit_statement(statement)? {
+                match callback {
+                    Callback::Continue => (),
+                    Callback::Break => {self.memory.leave_scope(); return Ok(None)},
+                    _ => {self.memory.leave_scope(); return Ok(Some(callback))}
+                }
+            }
+        }
+        self.memory.leave_scope();
+        Ok(None)
     }
 
     fn visit_if(&mut self, expression: &Expression, 
     first_statement: &Box<Statement>, second_statement: &Option<Box<Statement>>) ->
     Result<Option<Callback>, String> {
-        Ok(Some(Callback::Break))
+        self.memory.new_scope();
+        if let Object::Boolean(true) = self.visit_expression(expression)? {
+            let maybe_callback = self.visit_statement(first_statement);
+            self.memory.leave_scope();
+            maybe_callback
+        }
+        else {
+            if let Some(second) = second_statement {
+                let maybe_callback = self.visit_statement(second);
+                self.memory.leave_scope();
+                maybe_callback
+            }
+            else {
+                self.memory.leave_scope();
+                Ok(None)
+            }
+        }
     }
 
     fn visit_func_decl(&mut self, name: &String, args: &Vec<Expression>, 
     statement: &Box<Statement>) -> Result<(), String> {
+        let f_object = Object::Function(args.clone(), statement.clone());
+        self.memory.set_or_rewrite_var(name.clone(), f_object);
         Ok(())
     }
 
     fn visit_func_call(&mut self, call_object: &Box<PrimaryExpression>, 
-    args: &Vec<Expression>) -> Result<Object, String> {
-        Ok(Object::Int(1))
+    call_args: &Vec<Expression>) -> Result<Object, String> {
+        match self.visit_prim(call_object)? {
+            Object::Function(func_args, body) => {
+                self.memory.new_scope();
+                let args_amount = func_args.len();
+                for i in 0..args_amount {
+                    let current_arg = func_args[i].clone();
+
+                    let mut arg_name: String;
+                    let mut arg_init_val: Object;
+
+                    if let Expression::Primary(PrimaryExpression::Ident(name)) 
+                        = current_arg {
+                        arg_name = name;
+                        arg_init_val = Object::Null;
+                    }
+                    else let Expression::Primary(PrimaryExpression::Assign(
+                        
+                    ))
+                }
+                Ok(Object::Null)
+            },
+            _ => Err(format!("Can't call '{:?}' object!", call_object))
+        }
     }
 
 }
