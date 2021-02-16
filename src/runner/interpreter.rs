@@ -125,7 +125,7 @@ impl Engine {
             BinaryOperator::Add => 
             Ok(self.visit_expression(left)?.add(&self.visit_expression(right)?)),
             BinaryOperator::Sub => 
-            Ok(self.visit_expression(left)?.add(&self.visit_expression(right)?)),
+            Ok(self.visit_expression(left)?.sub(&self.visit_expression(right)?)),
             BinaryOperator::Mul => 
             Ok(self.visit_expression(left)?.mul(&self.visit_expression(right)?)),
             BinaryOperator::Div => 
