@@ -11,7 +11,7 @@ pub enum Statement {
     Echo(Expression),
     While(Expression, Box<Statement>),
     If(Expression, Box<Statement>, Option<Box<Statement>>),
-    FunctionDecl(String, Vec<Expression>, Box<Statement>),
+    FunctionDecl(String, Vec<String>, Box<Statement>),
     ExpressionStmt(Expression)
 }
 

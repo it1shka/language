@@ -6,7 +6,7 @@ pub enum Object {
     Float(f64),
     Str(String),
     Boolean(bool),
-    Function(Vec<Expression>, Box<Statement>),
+    Function(Vec<String>, Box<Statement>),
     Null
 }
 

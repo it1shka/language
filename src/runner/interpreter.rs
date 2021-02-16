@@ -15,7 +15,7 @@ enum Callback {
 }
 
 fn echo(object: Object) {
-    println!("{:?}", object)
+    println!("{}", match object.to_str() {Object::Str(obj_str) => obj_str, _ => "".to_string()})
 }
 
 impl Engine {
@@ -196,7 +196,7 @@ impl Engine {
         }
     }
 
-    fn visit_func_decl(&mut self, name: &String, args: &Vec<Expression>, 
+    fn visit_func_decl(&mut self, name: &String, args: &Vec<String>, 
     statement: &Box<Statement>) -> Result<(), String> {
         let f_object = Object::Function(args.clone(), statement.clone());
         self.memory.set_or_rewrite_var(name.clone(), f_object);
@@ -208,41 +208,20 @@ impl Engine {
         match self.visit_prim(call_object)? {
             Object::Function(func_args, body) => {
                 self.memory.new_scope();
-                let args_amount = func_args.len();
-                for i in 0..args_amount {
-                    let current_arg = func_args[i].clone();
-
-                    let mut arg_name: String;
-                    let mut arg_init_val: Object;
-
-                    if let Expression::Primary(PrimaryExpression::Ident(name)) 
-                        = current_arg {
-                        arg_name = name;
-                        arg_init_val = Object::Null;
-                    }
-                    else {
-                        return Err("Default params with expression aren't supported yet!"
-                        .to_string())
-                    }
-
-                    let call_arg = call_args.get(i);
-                    match call_arg {
-                        None => (),
-                        Some(expression) => {
-                            arg_init_val = self.visit_expression(expression)?;
-                        }
-                    }
-
-                    self.memory.set_var(arg_name, arg_init_val);
+                for (f_arg, c_arg) in func_args.iter().zip(call_args.iter()) {
+                    let value = self.visit_expression(c_arg)?;
+                    self.memory.set_var(f_arg.clone(), value);
                 }
-
-                match self.visit_statement(&body)? {
+                
+                let result = match self.visit_statement(&body)? {
                     Some(callback) => match callback {
                         Callback::Return(object) => Ok(object),
                         Callback::Break | Callback::Continue => Ok(Object::Null)
                     },
                     None => Ok(Object::Null)
-                }
+                };
+                self.memory.leave_scope();
+                result
             },
             _ => Err(format!("Can't call '{:?}' object!", call_object))
         }

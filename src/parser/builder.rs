@@ -177,7 +177,7 @@ impl<'a> Builder<'a> {
         match ident {
             Token::Ident(name) => {
                 self.eat(Token::LeftBracket)?;
-                let args = self.parse_args()?;
+                let args = self.parse_decl_args()?;
                 self.eat(Token::RightBracket)?;
                 let body = self.parse_statement()?;
                 Ok(Statement::FunctionDecl(name, args, Box::new(body)))
@@ -186,6 +186,24 @@ impl<'a> Builder<'a> {
                 "Expected function name, not '{:?}'", ident
             ))
         }
+    }
+
+    fn parse_decl_args(&mut self) -> Result<Vec<String>, String> {
+        let mut args: Vec<String> = Vec::new();
+        while self.peek()? != Token::RightBracket {
+            if let Token::Ident(name) = self.next()? {
+                args.push(name);
+            }
+            else {
+                return Err("Expected idents as param name while function declaration"
+                .to_string())
+            }
+            match self.peek()? {
+                Token::Comma => { self.next()?; },
+                _ => break
+            }
+        }
+        Ok(args)
     }
 
     fn parse_args(&mut self) -> Result<Vec<Expression>, String> {
