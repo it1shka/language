@@ -42,6 +42,8 @@ pub enum BinaryOperator {
     Not,            // !
 
     Assign,         // =
+
+    StrAdd,
 }
 
 #[derive(Debug, PartialEq, Clone)]

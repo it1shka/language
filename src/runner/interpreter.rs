@@ -152,6 +152,9 @@ impl Engine {
             BinaryOperator::Or => 
             Ok(self.visit_expression(left)?.or(&self.visit_expression(right)?)),
             
+            BinaryOperator::StrAdd =>
+            Ok(self.visit_expression(left)?.str_add(&self.visit_expression(right)?)),
+
             BinaryOperator::Not => 
             Err("Unexpected 'not' operator!".to_string())
             

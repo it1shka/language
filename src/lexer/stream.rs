@@ -62,6 +62,7 @@ impl<'a> Stream<'a> {
                 '+' => tok!(Token::Add),
                 '-' => tok!(Token::Sub),
                 '*' => tok!(Token::Mul),
+                '.' => tok!(Token::StrAdd),
                 '/' => {
                     if let Some('/') = self.peek() {
                         self.eat_comment();

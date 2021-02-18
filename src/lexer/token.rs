@@ -43,6 +43,9 @@ pub enum Token {
 
     Assign,         // =
 
+    //special operator
+    StrAdd, // .
+
     //punctuation
     LeftBracket,    // (
     RightBracket,   // )

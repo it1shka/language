@@ -84,6 +84,10 @@ impl Object {
         }
     }
 
+    pub fn str_add(&self, other: &Object) -> Object {
+        self.to_str().add(&other.to_str())
+    }
+
     pub fn mul(&self, other: &Object) -> Object {
         match (self, other) {
             (Object::Int(left), Object::Int(right)) => Object::Int(left * right),
@@ -98,7 +102,8 @@ impl Object {
 
     pub fn div(&self, other: &Object) -> Object {
         match (self, other) {
-            (Object::Int(left), Object::Int(right)) => Object::Int(left / right),
+            //(Object::Int(left), Object::Int(right)) => Object::Int(left / right),
+            (Object::Int(left), Object::Int(right)) => Object::Float(*left as f64 / *right as f64),
             (Object::Float(left), Object::Float(right)) => Object::Float(left / right),
             (Object::Int(left), Object::Float(right)) => Object::Float(*left as f64 / right),
             (Object::Float(left), Object::Int(right)) => Object::Float(left / *right as f64),

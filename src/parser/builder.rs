@@ -22,6 +22,7 @@ fn tr_op(token: Token) -> BinaryOperator {
         Token::Or => BinaryOperator::Or,
         Token::Not => BinaryOperator::Not,
         Token::Assign => BinaryOperator::Assign,
+        Token::StrAdd => BinaryOperator::StrAdd,
         _ => panic!("Can't translate Token to BinaryOperator")
     }
 }
@@ -317,7 +318,7 @@ impl<'a> Builder<'a> {
     fn expr6(&mut self) -> Result<Expression, String> {
         let mut left = self.expr7()?;
         while match self.peek()? {
-            Token::Add | Token::Sub => true,
+            Token::Add | Token::Sub | Token::StrAdd => true,
             _ => false
         }{
             let op = self.next()?;
