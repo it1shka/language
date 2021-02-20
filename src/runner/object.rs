@@ -7,6 +7,7 @@ pub enum Object {
     Str(String),
     Boolean(bool),
     Function(Vec<String>, Box<Statement>),
+    BuiltIn(fn(Vec<Object>) -> Result<Object, String>),
     Null
 }
 
@@ -21,7 +22,8 @@ impl Object {
             },
             Object::Boolean(x) => Object::Int(*x as i32),
             Object::Function(_, _) => Object::Null,
-            Object::Null => Object::Null
+            Object::Null => Object::Null,
+            Object::BuiltIn(_) => Object::Null
         }
     }
 
@@ -35,7 +37,8 @@ impl Object {
             },
             Object::Boolean(x) => Object::Float(*x as i32 as f64),
             Object::Function(_, _) => Object::Null,
-            Object::Null => Object::Null
+            Object::Null => Object::Null,
+            Object::BuiltIn(_) => Object::Null
         }
     }
 
@@ -46,7 +49,8 @@ impl Object {
             Object::Str(x) => Object::Str(x.clone()),
             Object::Boolean(x) => Object::Str(String::from(if *x {"true"} else {"false"})),
             Object::Function(_,_) => Object::Str(String::from("function")),
-            Object::Null => Object::Str(String::from("null"))
+            Object::Null => Object::Str(String::from("null")),
+            Object::BuiltIn(_) => Object::Str(String::from("builtin function"))
         }
     }
 
@@ -57,7 +61,8 @@ impl Object {
             Object::Str(x) => Object::Boolean(&x[..] == "true"),
             Object::Boolean(x) => Object::Boolean(*x),
             Object::Function(_,_) => Object::Null,
-            Object::Null => Object::Boolean(false)
+            Object::Null => Object::Boolean(false),
+            Object::BuiltIn(_) => Object::Null
         }
     }
 

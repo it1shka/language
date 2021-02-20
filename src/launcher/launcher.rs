@@ -14,8 +14,8 @@ pub fn launch(code: &str) {
             let mut engine = Engine::new();
             match engine.run(&program) {
                 Ok(()) => {
-                    let time_wasted = start.elapsed().as_micros();
-                    println!("Finished with time: {}", time_wasted);
+                    let time_wasted = start.elapsed().as_millis();
+                    println!("Finished with time: {}ms", time_wasted);
                 },
                 Err(exec_error) => {
                     println!("From execution: {}", exec_error);

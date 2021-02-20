@@ -2,6 +2,7 @@ use crate::parser::ast::*;
 
 use super::object::Object;
 use super::storage::MemStack;
+use super::builtins::*;
 
 pub struct Engine {
     memory: MemStack
@@ -14,10 +15,6 @@ enum Callback {
     Return(Object)
 }
 
-fn echo(object: Object) {
-    println!("{}", match object.to_str() {Object::Str(obj_str) => obj_str, _ => "".to_string()})
-}
-
 impl Engine {
     pub fn new() -> Engine {
         Engine {
@@ -26,12 +23,23 @@ impl Engine {
     }
 
     pub fn run(&mut self, ast: &Program) -> Result<(), String> {
+        self.init_builtins();
         let statements = &ast.0;
         let maybe_callback = self.visit_statement_list(statements)?;
         if let Some(Callback::Return(object)) = maybe_callback {
             echo(object);
         }
         Ok(())
+    }
+
+    fn init_builtins(&mut self) {
+        self.memory.set_var("print".to_string(), Object::BuiltIn(print));
+        self.memory.set_var("input".to_string(), Object::BuiltIn(input));
+        self.memory.set_var("int".to_string(), Object::BuiltIn(int));
+        self.memory.set_var("float".to_string(), Object::BuiltIn(float));
+        self.memory.set_var("bool".to_string(), Object::BuiltIn(bool_));
+        self.memory.set_var("typeof".to_string(), Object::BuiltIn(object_typeof));
+        self.memory.set_var("string".to_string(), Object::BuiltIn(string))
     }
 
     fn visit_statement_list(&mut self, statements: &Vec<Statement>) -> 
@@ -226,6 +234,17 @@ impl Engine {
                 self.memory.leave_scope();
                 result
             },
+            Object::BuiltIn(builtin_function) => {
+                let arguments_map = call_args
+                    .iter()
+                    .map(|argument| self.visit_expression(argument));
+                let mut arguments: Vec<Object> = Vec::new();
+                for maybe_arg in arguments_map {
+                    arguments.push(maybe_arg?);
+                }
+                let builtin_result = builtin_function(arguments);
+                builtin_result
+            }
             _ => Err(format!("Can't call '{:?}' object!", call_object))
         }
     }
